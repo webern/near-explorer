@@ -108,7 +108,7 @@ export default class AccountsApi extends ExplorerApi {
 
   async getAccountActivity(accountId: string): Promise<any> {
     try {
-      const accountActivity = await this.call<any>("account-activity-v1", [
+      const accountActivity = await this.call<any>("account-activity", [
         accountId,
       ]);
       if (!accountActivity) {
@@ -118,24 +118,6 @@ export default class AccountsApi extends ExplorerApi {
     } catch (error) {
       console.error(
         "AccountsApi.getAccountActivity failed to fetch data due to:"
-      );
-      console.error(error);
-      throw error;
-    }
-  }
-
-  async getExtendedAccountActivity(accountId: string): Promise<any> {
-    try {
-      const accountActivity = await this.call<any>("account-activity-v2", [
-        accountId,
-      ]);
-      if (!accountActivity) {
-        throw new Error("account activity not found");
-      }
-      return accountActivity;
-    } catch (error) {
-      console.error(
-        "AccountsApi.getExtendedAccountActivity failed to fetch data due to:"
       );
       console.error(error);
       throw error;

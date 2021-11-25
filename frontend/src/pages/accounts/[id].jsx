@@ -97,17 +97,9 @@ class AccountDetail extends Component {
             <Content
               size="medium"
               icon={<TransactionIcon style={{ width: "22px" }} />}
-              title={<h2>Activity (simple version)</h2>}
+              title={<h2>Activity</h2>}
             >
               <ActivilyList accountId={account.accountId} />
-            </Content>
-
-            <Content
-              size="medium"
-              icon={<TransactionIcon style={{ width: "22px" }} />}
-              title={<h2>Activity (extended version)</h2>}
-            >
-              <ActivilyList accountId={account.accountId} extended />
             </Content>
 
             <Content
