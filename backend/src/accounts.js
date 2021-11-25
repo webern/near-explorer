@@ -5,6 +5,10 @@ const {
   queryAccountOutcomeTransactionsCount,
   queryAccountIncomeTransactionsCount,
   queryAccountActivity,
+<<<<<<< HEAD
+=======
+  queryExtendedAccountActivity,
+>>>>>>> bc4a466 (Account Activity sketch)
 } = require("./db-utils");
 
 const {
@@ -95,3 +99,7 @@ exports.getAccountsList = getAccountsList;
 exports.getAccountTransactionsCount = getAccountTransactionsCount;
 exports.getAccountInfo = getAccountInfo;
 exports.getAccountActivity = getAccountActivity;
+<<<<<<< HEAD
+=======
+exports.getExtendedAccountActivity = getExtendedAccountActivity;
+>>>>>>> bc4a466 (Account Activity sketch)

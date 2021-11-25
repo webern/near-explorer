@@ -7,6 +7,7 @@ import Mixpanel from "../../libraries/mixpanel";
 import AccountsApi from "../../libraries/explorer-wamp/accounts";
 
 import AccountDetails from "../../components/accounts/AccountDetails";
+import ActivilyList from "../../components/activity/ActivityList";
 import ContractDetails from "../../components/contracts/ContractDetails";
 import Transactions from "../../components/transactions/Transactions";
 import Content from "../../components/utils/Content";
@@ -92,6 +93,23 @@ class AccountDetail extends Component {
             <Container>
               <ContractDetails accountId={account.accountId} />
             </Container>
+
+            <Content
+              size="medium"
+              icon={<TransactionIcon style={{ width: "22px" }} />}
+              title={<h2>Activity (simple version)</h2>}
+            >
+              <ActivilyList accountId={account.accountId} />
+            </Content>
+
+            <Content
+              size="medium"
+              icon={<TransactionIcon style={{ width: "22px" }} />}
+              title={<h2>Activity (extended version)</h2>}
+            >
+              <ActivilyList accountId={account.accountId} extended />
+            </Content>
+
             <Content
               size="medium"
               icon={<TransactionIcon style={{ width: "22px" }} />}
