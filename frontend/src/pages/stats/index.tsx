@@ -1,6 +1,4 @@
 import Head from "next/head";
-import NodeProvider, { NodeConsumer } from "../../context/NodeProvider";
-import NetworkStatsProvider from "../../context/NetworkStatsProvider";
 
 import Content from "../../components/utils/Content";
 import TransactionsByDate from "../../components/stats/TransactionsByDate";
@@ -30,6 +28,7 @@ const Stats: NextPage = () => {
     marginTop: "26px",
     marginLeft: "24px",
   };
+
   return (
     <>
       <Head>
@@ -43,9 +42,7 @@ const Stats: NextPage = () => {
         }
       >
         <div id="protocolConfiguration">
-          <NetworkStatsProvider>
-            <ProtocolConfigInfo />
-          </NetworkStatsProvider>
+          <ProtocolConfigInfo />
         </div>
         {currentNetwork.name === "mainnet" ? (
           <div id="circulatingSupply">
@@ -85,15 +82,7 @@ const Stats: NextPage = () => {
         </div>
         <hr />
         <div id="validators">
-          <NodeProvider>
-            <NodeConsumer>
-              {(context) =>
-                typeof context.currentValidators !== "undefined" ? (
-                  <StakingBar validators={context.currentValidators} />
-                ) : null
-              }
-            </NodeConsumer>
-          </NodeProvider>
+          <StakingBar />
         </div>
       </Content>
     </>

@@ -10,7 +10,6 @@ import { getNearNetwork } from "../libraries/config";
 import Header from "../components/utils/Header";
 import Footer from "../components/utils/Footer";
 import { NetworkContext } from "../context/NetworkContext";
-import DatabaseProvider from "../context/DatabaseProvider";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -77,11 +76,9 @@ const App: AppType = ({
             src="/static/images/explorer-bg.svg"
             className="background-img"
           />
-          <DatabaseProvider>
-            <LocalizeWrapper>
-              <Component {...pageProps} />
-            </LocalizeWrapper>
-          </DatabaseProvider>
+          <LocalizeWrapper>
+            <Component {...pageProps} />
+          </LocalizeWrapper>
         </div>
         <Footer />
       </NetworkContext.Provider>
@@ -160,21 +157,11 @@ const App: AppType = ({
 
 App.getInitialProps = async (appContext) => {
   const req = appContext.ctx.req;
-  const currentNearNetwork = getNearNetwork(req);
-  let cookies, acceptedLanguages;
-  if (typeof window === "undefined") {
-    if (req) {
-      cookies = req.headers.cookie;
-      acceptedLanguages = req.headers["accept-language"];
-    } else {
-      throw new Error("No req in app context");
-    }
-  }
   return {
-    currentNearNetwork,
+    currentNearNetwork: getNearNetwork(req),
     ...(await NextApp.getInitialProps(appContext)),
-    cookies,
-    acceptedLanguages,
+    cookies: req ? req.headers.cookie : undefined,
+    acceptedLanguages: req ? req.headers["accept-language"] : undefined,
   };
 };
 

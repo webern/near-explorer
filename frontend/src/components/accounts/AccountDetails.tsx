@@ -1,10 +1,8 @@
 import moment from "moment";
 
-import { FC, useEffect, useState } from "react";
+import { FC } from "react";
 
 import { Row, Col, Spinner } from "react-bootstrap";
-
-import AccountsApi, { Account } from "../../libraries/explorer-wamp/accounts";
 
 import CardCell from "../utils/CardCell";
 import Term from "../utils/Term";
@@ -16,35 +14,20 @@ import StorageSize from "../utils/StorageSize";
 
 import { Translate } from "react-localize-redux";
 import { useNetworkContext } from "../../hooks/use-network-context";
+import { useWampSimpleQuery } from "../../hooks/wamp";
+import { Account } from "../../providers/accounts";
 
 export interface Props {
-  account: Partial<Omit<Account, "accountId">> & { accountId: string };
+  account: Partial<Omit<Account, "accountId">> & {
+    accountId: string;
+  };
 }
 
 const AccountDetails: FC<Props> = ({ account }) => {
   const { currentNetwork } = useNetworkContext();
-  const [outTransactionsCount, setOutTransactionsCount] = useState<number>();
-  const [inTransactionsCount, setInTransactionsCount] = useState<number>();
-  useEffect(() => {
-    setOutTransactionsCount(undefined);
-    setInTransactionsCount(undefined);
-    new AccountsApi()
-      .getAccountTransactionsCount(account.accountId)
-      .then((accountStats) => {
-        if (accountStats) {
-          setOutTransactionsCount(accountStats.outTransactionsCount);
-          setInTransactionsCount(accountStats.inTransactionsCount);
-        }
-        return;
-      })
-      .catch((error) => {
-        console.warn(
-          "Account information retrieval failed for ",
-          account.accountId,
-          error
-        );
-      });
-  }, [account.accountId]);
+  const transactionCount = useWampSimpleQuery("account-transactions-count", [
+    account.accountId,
+  ]);
 
   return (
     <Translate>
@@ -72,8 +55,8 @@ const AccountDetails: FC<Props> = ({ account }) => {
                   <>
                     <span>
                       &uarr;
-                      {outTransactionsCount !== undefined ? (
-                        outTransactionsCount.toLocaleString()
+                      {transactionCount !== undefined ? (
+                        transactionCount.outTransactionsCount.toLocaleString()
                       ) : (
                         <Spinner animation="border" variant="secondary" />
                       )}
@@ -81,8 +64,8 @@ const AccountDetails: FC<Props> = ({ account }) => {
                     &nbsp;&nbsp;
                     <span>
                       &darr;
-                      {inTransactionsCount !== undefined ? (
-                        inTransactionsCount.toLocaleString()
+                      {transactionCount !== undefined ? (
+                        transactionCount.inTransactionsCount.toLocaleString()
                       ) : (
                         <Spinner animation="border" variant="secondary" />
                       )}

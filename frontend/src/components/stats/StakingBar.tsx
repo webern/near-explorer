@@ -1,19 +1,21 @@
 import BN from "bn.js";
 
-import React from "react";
+import { FC } from "react";
 import ReactEcharts from "echarts-for-react";
 
 import { utils } from "near-api-js";
 
-import { ValidationNodeInfo } from "../../libraries/explorer-wamp/nodes";
-
 import { Translate } from "react-localize-redux";
+import { ValidationNodeInfo } from "../../libraries/wamp/types";
+import { useNodes } from "../../hooks/subscriptions";
 
-export interface Props {
-  validators: ValidationNodeInfo[];
-}
+const StakingBar: FC = () => {
+  const validators = useNodes()?.currentValidators;
 
-const StakingBar = ({ validators }: Props) => {
+  if (!validators) {
+    return null;
+  }
+
   validators.sort((v1: ValidationNodeInfo, v2: ValidationNodeInfo) => {
     let diff = new BN(v1.currentStake).sub(new BN(v2.currentStake)).toString();
     return Number(diff.slice(0, 5));

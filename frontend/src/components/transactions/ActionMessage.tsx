@@ -4,9 +4,17 @@ import AccountLink from "../utils/AccountLink";
 import Balance from "../utils/Balance";
 import CodePreview from "../utils/CodePreview";
 
-import * as T from "../../libraries/explorer-wamp/transactions";
-
 import { Translate } from "react-localize-redux";
+import {
+  AddKey,
+  CreateAccount,
+  DeleteAccount,
+  DeleteKey,
+  DeployContract,
+  FunctionCall,
+  Stake,
+  Transfer,
+} from "../../libraries/wamp/types";
 
 export interface Props<A> {
   actionKind: keyof TransactionMessageRenderers;
@@ -16,24 +24,24 @@ export interface Props<A> {
 }
 
 type AnyAction =
-  | T.CreateAccount
-  | T.DeleteAccount
-  | T.DeployContract
-  | T.FunctionCall
-  | T.Transfer
-  | T.Stake
-  | T.AddKey
-  | T.DeleteKey;
+  | CreateAccount
+  | DeleteAccount
+  | DeployContract
+  | FunctionCall
+  | Transfer
+  | Stake
+  | AddKey
+  | DeleteKey;
 
 interface TransactionMessageRenderers {
-  CreateAccount: React.FC<Props<T.CreateAccount>>;
-  DeleteAccount: React.FC<Props<T.DeleteAccount>>;
-  DeployContract: React.FC<Props<T.DeployContract>>;
-  FunctionCall: React.FC<Props<T.FunctionCall>>;
-  Transfer: React.FC<Props<T.Transfer>>;
-  Stake: React.FC<Props<T.Stake>>;
-  AddKey: React.FC<Props<T.AddKey>>;
-  DeleteKey: React.FC<Props<T.DeleteKey>>;
+  CreateAccount: React.FC<Props<CreateAccount>>;
+  DeleteAccount: React.FC<Props<DeleteAccount>>;
+  DeployContract: React.FC<Props<DeployContract>>;
+  FunctionCall: React.FC<Props<FunctionCall>>;
+  Transfer: React.FC<Props<Transfer>>;
+  Stake: React.FC<Props<Stake>>;
+  AddKey: React.FC<Props<AddKey>>;
+  DeleteKey: React.FC<Props<DeleteKey>>;
 }
 
 export const displayArgs = (args: string) => {
@@ -63,13 +71,13 @@ export const displayArgs = (args: string) => {
 };
 
 const transactionMessageRenderers: TransactionMessageRenderers = {
-  CreateAccount: ({ receiverId }: Props<T.CreateAccount>) => (
+  CreateAccount: ({ receiverId }: Props<CreateAccount>) => (
     <>
       <Translate id="component.transactions.ActionMessage.CreateAccount.new_account_created" />
       <AccountLink accountId={receiverId} />
     </>
   ),
-  DeleteAccount: ({ receiverId, actionArgs }: Props<T.DeleteAccount>) => (
+  DeleteAccount: ({ receiverId, actionArgs }: Props<DeleteAccount>) => (
     <>
       <Translate id="component.transactions.ActionMessage.DeleteAccount.delete_account" />
       <AccountLink accountId={receiverId} />
@@ -77,7 +85,7 @@ const transactionMessageRenderers: TransactionMessageRenderers = {
       <AccountLink accountId={actionArgs.beneficiary_id} />
     </>
   ),
-  DeployContract: ({ receiverId }: Props<T.DeployContract>) => (
+  DeployContract: ({ receiverId }: Props<DeployContract>) => (
     <>
       <Translate id="component.transactions.ActionMessage.DeployContract.contract_deployed" />
       <AccountLink accountId={receiverId} />
@@ -87,7 +95,7 @@ const transactionMessageRenderers: TransactionMessageRenderers = {
     receiverId,
     actionArgs,
     showDetails,
-  }: Props<T.FunctionCall>) => {
+  }: Props<FunctionCall>) => {
     let args;
     if (showDetails) {
       if (typeof actionArgs.args === "undefined") {
@@ -122,7 +130,7 @@ const transactionMessageRenderers: TransactionMessageRenderers = {
       </>
     );
   },
-  Transfer: ({ receiverId, actionArgs: { deposit } }: Props<T.Transfer>) => (
+  Transfer: ({ receiverId, actionArgs: { deposit } }: Props<Transfer>) => (
     <>
       <Translate id="component.transactions.ActionMessage.Transfer.transferred" />
       <Balance amount={deposit} />
@@ -130,7 +138,7 @@ const transactionMessageRenderers: TransactionMessageRenderers = {
       <AccountLink accountId={receiverId} />
     </>
   ),
-  Stake: ({ actionArgs: { stake, public_key } }: Props<T.Stake>) => (
+  Stake: ({ actionArgs: { stake, public_key } }: Props<Stake>) => (
     <>
       <Translate id="component.transactions.ActionMessage.Stake.staked" />
       <Balance amount={stake} />{" "}
@@ -140,7 +148,7 @@ const transactionMessageRenderers: TransactionMessageRenderers = {
       />
     </>
   ),
-  AddKey: ({ receiverId, actionArgs }: Props<T.AddKey>) => (
+  AddKey: ({ receiverId, actionArgs }: Props<AddKey>) => (
     <>
       {typeof actionArgs.access_key.permission === "object" ? (
         actionArgs.access_key.permission.permission_kind ? (
@@ -208,7 +216,7 @@ const transactionMessageRenderers: TransactionMessageRenderers = {
       )}
     </>
   ),
-  DeleteKey: ({ actionArgs: { public_key } }: Props<T.DeleteKey>) => (
+  DeleteKey: ({ actionArgs: { public_key } }: Props<DeleteKey>) => (
     <Translate
       id="component.transactions.ActionMessage.DeleteKey.key_deleted"
       data={{ public_key: public_key.substring(0, 15) }}

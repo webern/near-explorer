@@ -2,8 +2,6 @@ import Head from "next/head";
 
 import { Container } from "react-bootstrap";
 
-import AccountsApi, { Account } from "../../libraries/explorer-wamp/accounts";
-
 import AccountDetails from "../../components/accounts/AccountDetails";
 import ContractDetails from "../../components/contracts/ContractDetails";
 import Transactions from "../../components/transactions/Transactions";
@@ -14,24 +12,25 @@ import TransactionIcon from "../../../public/static/images/icon-t-transactions.s
 import { Translate } from "react-localize-redux";
 import { GetServerSideProps, NextPage } from "next";
 import { useAnalyticsTrackOnMount } from "../../hooks/analytics/use-analytics-track-on-mount";
+import wampApi from "../../libraries/wamp/api";
+import { getNearNetwork } from "../../libraries/config";
+import { Account, getAccount } from "../../providers/accounts";
 
 interface Props {
-  account:
-    | Account
-    | {
-        accountId: string;
-      };
+  accountId: string;
+  account?: Account;
   accountFetchingError?: unknown;
   accountError?: unknown;
 }
 
 const AccountDetail: NextPage<Props> = ({
+  accountId,
   account,
   accountError,
   accountFetchingError,
 }) => {
   useAnalyticsTrackOnMount("Explorer View Individual Account", {
-    accountId: account.accountId,
+    accountId,
   });
 
   return (
@@ -43,29 +42,29 @@ const AccountDetail: NextPage<Props> = ({
         title={
           <h1>
             <Translate id="common.accounts.account" />
-            {`: @${account.accountId}`}
+            {`: @${accountId}`}
           </h1>
         }
         border={false}
       >
-        {accountError ? (
+        {account ? (
+          <AccountDetails account={account} />
+        ) : accountError ? (
           <Translate
             id="page.accounts.error.account_not_found"
-            data={{ account_id: account.accountId }}
-          />
-        ) : accountFetchingError ? (
-          <Translate
-            id="page.accounts.error.account_fetching"
-            data={{ account_id: account.accountId }}
+            data={{ account_id: accountId }}
           />
         ) : (
-          <AccountDetails account={account} />
+          <Translate
+            id="page.accounts.error.account_fetching"
+            data={{ account_id: accountId }}
+          />
         )}
       </Content>
       {accountError || accountFetchingError ? null : (
         <>
           <Container>
-            <ContractDetails accountId={account.accountId} />
+            <ContractDetails accountId={accountId} />
           </Container>
           <Content
             size="medium"
@@ -76,7 +75,7 @@ const AccountDetail: NextPage<Props> = ({
               </h2>
             }
           >
-            <Transactions accountId={account.accountId} count={10} />
+            <Transactions accountId={accountId} count={10} />
           </Content>
         </>
       )}
@@ -88,46 +87,51 @@ export const getServerSideProps: GetServerSideProps<
   Props,
   { id: string }
 > = async ({ req, params, res }) => {
-  const id = params!.id;
-  if (/[A-Z]/.test(id) && res) {
+  const accountId = params!.id;
+  if (/[A-Z]/.test(accountId) && res) {
     return {
       redirect: {
         permanent: true,
-        destination: `/accounts/${id.toLowerCase()}`,
+        destination: `/accounts/${accountId.toLowerCase()}`,
       },
     };
   }
 
   try {
-    const isAccountExist = await new AccountsApi(req).isAccountIndexed(id);
+    const currentNetwork = getNearNetwork(req);
+    const wampCall = wampApi.call(currentNetwork);
+    const isAccountExist = await wampCall("is-account-indexed", [accountId]);
     if (isAccountExist) {
       try {
-        const account = await new AccountsApi(req).getAccountInfo(id);
         return {
-          props: { account },
+          props: {
+            accountId,
+            account: await getAccount(wampCall, accountId),
+          },
         };
       } catch (accountFetchingError) {
         return {
           props: {
-            account: { accountId: id },
+            accountId,
             accountFetchingError,
           },
         };
       }
     }
+    return {
+      props: {
+        accountId,
+        accountError: `Account ${accountId} does not exist`,
+      },
+    };
   } catch (accountError) {
     return {
       props: {
-        account: { accountId: id },
+        accountId,
         accountError,
       },
     };
   }
-  return {
-    props: {
-      account: { accountId: id },
-    },
-  };
 };
 
 export default AccountDetail;

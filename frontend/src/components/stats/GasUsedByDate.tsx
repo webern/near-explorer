@@ -1,52 +1,48 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useMemo } from "react";
 import { Tabs, Tab } from "react-bootstrap";
 import ReactEcharts from "echarts-for-react";
 import * as echarts from "echarts";
 import BN from "bn.js";
 import { utils } from "near-api-js";
 
-import StatsApi from "../../libraries/explorer-wamp/stats";
-import { cumulativeSumArray } from "../../libraries/stats";
-
-import { DatabaseContext } from "../../context/DatabaseProvider";
-
 import { Props } from "./TransactionsByDate";
 
 import { Translate } from "react-localize-redux";
+import { useLatestGasPrice } from "../../hooks/data";
+import { useWampSimpleQuery } from "../../hooks/wamp";
+import { cumulativeSumArray } from "../../libraries/stats";
 
 const GasUsedByDateChart = ({ chartStyle }: Props) => {
-  const [gasUsedByDate, setGasUsedByDate] = useState(Array());
-  const [date, setDate] = useState(Array());
-  const [cumulativeGasUsedByDate, setTotal] = useState(Array());
-
-  const [feeUsedByDate, setFee] = useState(Array());
-
-  const { latestGasPrice } = useContext(DatabaseContext);
-
-  useEffect(() => {
-    new StatsApi().gasUsedAggregatedByDate().then((gasUsed) => {
-      if (gasUsed) {
-        const petagas = gasUsed.map(({ gasUsed }) =>
-          new BN(gasUsed).divn(1000000).divn(1000000).divn(1000).toNumber()
-        );
-        setTotal(cumulativeSumArray(petagas));
-        setGasUsedByDate(petagas);
-        const date = gasUsed.map(({ date }) => date.slice(0, 10));
-        setDate(date);
-
-        if (latestGasPrice) {
-          const fee = gasUsed.map(({ gasUsed }) =>
-            utils.format.formatNearAmount(
-              new BN(gasUsed).mul(latestGasPrice).toString(),
-              5
-            )
-          );
-
-          setFee(fee);
-        }
-      }
-    });
-  }, [latestGasPrice]);
+  const latestGasPrice = useLatestGasPrice();
+  const gasUsedByDate =
+    useWampSimpleQuery("gas-used-aggregated-by-date", []) ?? [];
+  const gasUsed = useMemo(
+    () =>
+      gasUsedByDate.map(({ gasUsed }) =>
+        new BN(gasUsed).divn(1000000).divn(1000000).divn(1000).toNumber()
+      ),
+    [gasUsedByDate]
+  );
+  const gasUsedCumulative = useMemo(() => cumulativeSumArray(gasUsed), [
+    gasUsed,
+  ]);
+  const gasUsedDates = useMemo(
+    () => gasUsedByDate.map(({ date }) => date.slice(0, 10)),
+    [gasUsedByDate]
+  );
+  const feeUsedByDate = useMemo(() => {
+    if (!latestGasPrice) {
+      return [];
+    }
+    return gasUsedByDate.map(({ gasUsed }) =>
+      Number(
+        utils.format.formatNearAmount(
+          new BN(gasUsed).mul(latestGasPrice).toString(),
+          5
+        )
+      )
+    );
+  }, [latestGasPrice, gasUsedByDate]);
 
   const getOption = (title: string, data: Array<number>, name: string) => {
     return {
@@ -69,7 +65,7 @@ const GasUsedByDateChart = ({ chartStyle }: Props) => {
         {
           type: "category",
           boundaryGap: false,
-          data: date,
+          data: gasUsedDates,
         },
       ],
       yAxis: [
@@ -135,7 +131,7 @@ const GasUsedByDateChart = ({ chartStyle }: Props) => {
                 translate(
                   "component.stats.GasUsedByDate.daily_amount_of_used_gas"
                 ).toString(),
-                gasUsedByDate,
+                gasUsed,
                 translate("component.stats.GasUsedByDate.petagas").toString()
               )}
               style={chartStyle}
@@ -147,7 +143,7 @@ const GasUsedByDateChart = ({ chartStyle }: Props) => {
                 translate(
                   "component.stats.GasUsedByDate.total_amount_of_used_gas"
                 ).toString(),
-                cumulativeGasUsedByDate,
+                gasUsedCumulative,
                 translate("component.stats.GasUsedByDate.petagas").toString()
               )}
               style={chartStyle}

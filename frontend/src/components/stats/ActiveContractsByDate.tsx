@@ -1,31 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import ReactEcharts from "echarts-for-react";
 import * as echarts from "echarts";
-
-import StatsApi, { ContractsByDate } from "../../libraries/explorer-wamp/stats";
 
 import { Props } from "./TransactionsByDate";
 
 import { Translate } from "react-localize-redux";
+import { useWampSimpleQuery } from "../../hooks/wamp";
 
 const ActiveContractsByDate = ({ chartStyle }: Props) => {
-  const [newContractsByDate, setContracts] = useState(Array());
-  const [date, setDate] = useState(Array());
-
-  useEffect(() => {
-    new StatsApi().activeContractsCountAggregatedByDate().then((contracts) => {
-      if (contracts) {
-        const newContracts = contracts.map(
-          (contract: ContractsByDate) => contract.contractsCount
-        );
-        setContracts(newContracts);
-        const date = contracts.map((contract: ContractsByDate) =>
-          contract.date.slice(0, 10)
-        );
-        setDate(date);
-      }
-    });
-  }, []);
+  const contractsByDate =
+    useWampSimpleQuery("active-contracts-count-aggregated-by-date", []) ?? [];
+  const contractsByDateCount = useMemo(
+    () => contractsByDate.map(({ contractsCount }) => contractsCount),
+    [contractsByDate]
+  );
+  const contractsByDateDates = useMemo(
+    () => contractsByDate.map(({ date }) => date.slice(0, 10)),
+    [contractsByDate]
+  );
 
   const getOption = (
     title: string,
@@ -52,7 +44,7 @@ const ActiveContractsByDate = ({ chartStyle }: Props) => {
         {
           type: "category",
           boundaryGap: false,
-          data: date,
+          data: contractsByDateDates,
         },
       ],
       yAxis: [
@@ -118,7 +110,7 @@ const ActiveContractsByDate = ({ chartStyle }: Props) => {
             translate(
               "component.stats.ActiveContractsByDate.active_contracts"
             ).toString(),
-            newContractsByDate
+            contractsByDateCount
           )}
           style={chartStyle}
         />

@@ -1,53 +1,59 @@
 import moment from "moment";
 
-import { FC, useEffect, useState } from "react";
+import { FC, useCallback, useMemo } from "react";
 
 import { Row, Col } from "react-bootstrap";
-
-import ContractsApi from "../../libraries/explorer-wamp/contracts";
 
 import CardCell from "../utils/CardCell";
 import Term from "../utils/Term";
 import TransactionLink from "../utils/TransactionLink";
 
 import { Translate } from "react-localize-redux";
+import { useWampQuery } from "../../hooks/wamp";
 
 interface Props {
   accountId: string;
 }
 
-interface State {
-  locked?: boolean;
-  transactionHash?: string;
-  timestamp?: number;
-  codeHash?: string;
-}
-
 const ContractDetails: FC<Props> = ({ accountId }) => {
-  const [
-    { locked, transactionHash, timestamp, codeHash },
-    setState,
-  ] = useState<State>({});
-
-  useEffect(() => {
-    new ContractsApi()
-      .getExtendedContractInfo(accountId)
-      .then((contractInfo) => {
-        if (contractInfo) {
-          setState({
-            codeHash: contractInfo.codeHash,
-            transactionHash: contractInfo.transactionHash,
-            timestamp: contractInfo.timestamp,
-            locked: contractInfo.accessKeys.every(
-              (key: any) =>
-                key["access_key"]["permission"]["FunctionCall"] !== undefined
-            ),
-          });
+  const contractInfo = useWampQuery(
+    useCallback(
+      async (wampCall) => {
+        // codeHash does not exist for deleted accounts
+        const account = await wampCall("nearcore-view-account", [accountId]);
+        const codeHash = account["code_hash"];
+        // TODO: find out why we have magic number here
+        if (!codeHash || codeHash === "11111111111111111111111111111111") {
+          return;
         }
-        return;
-      })
-      .catch((err) => console.error(err));
-  }, [accountId]);
+        const [contractInfo, accessKeys] = await Promise.all([
+          wampCall("contract-info-by-account-id", [accountId]),
+          wampCall("nearcore-view-access-key-list", [accountId]),
+        ]);
+        if (contractInfo !== undefined) {
+          return {
+            codeHash,
+            transactionHash: contractInfo.hash,
+            timestamp: contractInfo.blockTimestamp,
+            accessKeys: accessKeys.keys,
+          };
+        } else {
+          return {
+            codeHash,
+            accessKeys: accessKeys.keys,
+          };
+        }
+      },
+      [accountId]
+    )
+  );
+  const locked = useMemo(
+    () =>
+      contractInfo?.accessKeys.every(
+        (key) => key["access_key"]["permission"]["FunctionCall"] !== undefined
+      ),
+    [contractInfo]
+  );
 
   let lockedShow: string | JSX.Element;
   if (locked !== undefined) {
@@ -58,8 +64,8 @@ const ContractDetails: FC<Props> = ({ accountId }) => {
         <Translate id="common.state.no" />
       );
   }
-  if (!codeHash) {
-    return <></>;
+  if (!contractInfo?.codeHash) {
+    return null;
   }
   return (
     <Translate>
@@ -90,8 +96,8 @@ const ContractDetails: FC<Props> = ({ accountId }) => {
                     />
                   }
                   text={
-                    timestamp
-                      ? moment(timestamp).format(
+                    contractInfo.timestamp
+                      ? moment(contractInfo.timestamp).format(
                           translate(
                             "common.date_time.date_time_format"
                           ).toString()
@@ -114,9 +120,11 @@ const ContractDetails: FC<Props> = ({ accountId }) => {
                     />
                   }
                   text={
-                    transactionHash ? (
-                      <TransactionLink transactionHash={transactionHash}>
-                        {transactionHash}
+                    contractInfo.transactionHash ? (
+                      <TransactionLink
+                        transactionHash={contractInfo.transactionHash}
+                      >
+                        {contractInfo.transactionHash}
                       </TransactionLink>
                     ) : (
                       translate("common.state.not_available").toString()
@@ -157,7 +165,7 @@ const ContractDetails: FC<Props> = ({ accountId }) => {
                       )}
                     />
                   }
-                  text={codeHash ? codeHash : ""}
+                  text={contractInfo.codeHash}
                   className="block-card-created account-card-back border-0"
                 />
               </Col>

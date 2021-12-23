@@ -1,7 +1,6 @@
 import { FC } from "react";
 import { Translate } from "react-localize-redux";
-
-import { Receipt } from "../../libraries/explorer-wamp/receipts";
+import { Receipt } from "../../libraries/wamp/types";
 
 import ActionGroup from "../transactions/ActionGroup";
 import ReceiptLink from "../utils/ReceiptLink";

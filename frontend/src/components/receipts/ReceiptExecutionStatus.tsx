@@ -1,5 +1,5 @@
-import { ReceiptExecutionStatus } from "../../libraries/explorer-wamp/receipts";
 import { Translate } from "react-localize-redux";
+import { ReceiptExecutionStatus } from "../../libraries/wamp/types";
 
 export interface Props {
   status: ReceiptExecutionStatus;

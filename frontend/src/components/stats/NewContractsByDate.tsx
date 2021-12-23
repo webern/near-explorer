@@ -1,46 +1,49 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { Tabs, Tab } from "react-bootstrap";
 import ReactEcharts from "echarts-for-react";
 import * as echarts from "echarts";
 
-import StatsApi, { ContractsByDate } from "../../libraries/explorer-wamp/stats";
 import { cumulativeSumArray } from "../../libraries/stats";
 
 import { Props } from "./TransactionsByDate";
 
 import { Translate } from "react-localize-redux";
+import { useWampSimpleQuery } from "../../hooks/wamp";
 
 const NewContractsByDate = ({ chartStyle }: Props) => {
-  const [newContractsByDate, setContracts] = useState(Array());
-  const [date, setDate] = useState(Array());
-  const [cumulativeNewContractsByDate, setTotal] = useState(Array());
-  const [cumulativeUniqueContractsByDate, setUniqueTotal] = useState(Array());
+  const uniqueDeployedContracts =
+    useWampSimpleQuery(
+      "unique-deployed-contracts-count-aggregate-by-date",
+      []
+    ) ?? [];
+  const newContracts =
+    useWampSimpleQuery("new-contracts-count-aggregated-by-date", []) ?? [];
 
-  useEffect(() => {
-    new StatsApi().newContractsCountAggregatedByDate().then((contracts) => {
-      if (contracts) {
-        const newContracts = contracts.map((contract: ContractsByDate) =>
-          Number(contract.contractsCount)
-        );
-        setTotal(cumulativeSumArray(newContracts));
-        setContracts(newContracts);
-        const date = contracts.map((contract: ContractsByDate) =>
-          contract.date.slice(0, 10)
-        );
-        setDate(date);
-      }
-    });
-    new StatsApi()
-      .uniqueDeployedContractsCountAggregatedByDate()
-      .then((contracts) => {
-        if (contracts) {
-          const uniqueContracts = contracts.map((contract: ContractsByDate) =>
-            Number(contract.contractsCount)
-          );
-          setUniqueTotal(cumulativeSumArray(uniqueContracts));
-        }
-      });
-  }, []);
+  const newContractsDates = useMemo(
+    () => newContracts.map(({ date }) => date.slice(0, 10)),
+    [newContracts]
+  );
+  const newContractsCount = useMemo(
+    () => newContracts.map(({ contractsCount }) => Number(contractsCount)),
+    [newContracts]
+  );
+  const newContractsCountCumulative = useMemo(
+    () => cumulativeSumArray(newContractsCount),
+    [newContractsCount]
+  );
+  const uniqueContractsDates = useMemo(
+    () => uniqueDeployedContracts.map(({ date }) => date.slice(0, 10)),
+    [uniqueDeployedContracts]
+  );
+  const uniqueContractsCountCumulative = useMemo(
+    () =>
+      cumulativeSumArray(
+        uniqueDeployedContracts.map(({ contractsCount }) =>
+          Number(contractsCount)
+        )
+      ),
+    [uniqueDeployedContracts]
+  );
 
   const getOption = (
     title: string,
@@ -136,8 +139,8 @@ const NewContractsByDate = ({ chartStyle }: Props) => {
                 translate(
                   "component.stats.NewContractsByDate.new_contracts"
                 ).toString(),
-                newContractsByDate,
-                date
+                newContractsCount,
+                newContractsDates
               )}
               style={chartStyle}
             />
@@ -151,8 +154,8 @@ const NewContractsByDate = ({ chartStyle }: Props) => {
                 translate(
                   "component.stats.NewContractsByDate.new_contracts"
                 ).toString(),
-                cumulativeNewContractsByDate,
-                date
+                newContractsCountCumulative,
+                newContractsDates
               )}
               style={chartStyle}
             />
@@ -166,8 +169,8 @@ const NewContractsByDate = ({ chartStyle }: Props) => {
                 translate(
                   "component.stats.NewContractsByDate.new_contracts"
                 ).toString(),
-                cumulativeUniqueContractsByDate,
-                date
+                uniqueContractsCountCumulative,
+                uniqueContractsDates
               )}
               style={chartStyle}
             />

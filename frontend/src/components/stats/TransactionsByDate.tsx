@@ -1,41 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { Tabs, Tab } from "react-bootstrap";
 import ReactEcharts from "echarts-for-react";
 import * as echarts from "echarts";
 
-import StatsApi, {
-  TransactionsByDate,
-} from "../../libraries/explorer-wamp/stats";
 import { cumulativeSumArray } from "../../libraries/stats";
 
 import { Translate } from "react-localize-redux";
+import { useWampSimpleQuery } from "../../hooks/wamp";
 
 export interface Props {
   chartStyle: object;
 }
 
 const TransactionsByDateChart = ({ chartStyle }: Props) => {
-  const [transactionsByDate, setTransactions] = useState(Array());
-  const [date, setDate] = useState(Array());
-  const [cumulativeTransactionsByDate, setTotal] = useState(Array());
-
-  useEffect(() => {
-    new StatsApi().transactionsCountAggregatedByDate().then((transactions) => {
-      if (transactions) {
-        const transactionByDate = transactions.map(
-          (transaction: TransactionsByDate) =>
-            Number(transaction.transactionsCount)
-        );
-        const totalTransactionByDate = cumulativeSumArray(transactionByDate);
-        setTransactions(transactionByDate);
-        setTotal(totalTransactionByDate);
-        const date = transactions.map((transaction: TransactionsByDate) =>
-          transaction.date.slice(0, 10)
-        );
-        setDate(date);
-      }
-    });
-  }, []);
+  const transactionCountByDate =
+    useWampSimpleQuery("transactions-count-aggregated-by-date", []) ?? [];
+  const transactionsByDate = useMemo(
+    () =>
+      transactionCountByDate.map(({ transactionsCount }) =>
+        Number(transactionsCount)
+      ),
+    [transactionCountByDate]
+  );
+  const transactionsByDateCumulative = useMemo(
+    () => cumulativeSumArray(transactionsByDate),
+    [transactionsByDate]
+  );
+  const transactionDates = useMemo(
+    () => transactionCountByDate.map(({ date }) => date.slice(0, 10)),
+    [transactionCountByDate]
+  );
 
   const getOption = (
     title: string,
@@ -62,7 +56,7 @@ const TransactionsByDateChart = ({ chartStyle }: Props) => {
         {
           type: "category",
           boundaryGap: false,
-          data: date,
+          data: transactionDates,
         },
       ],
       yAxis: [
@@ -143,7 +137,7 @@ const TransactionsByDateChart = ({ chartStyle }: Props) => {
                 translate(
                   "component.stats.TransactionsByDate.transactions"
                 ).toString(),
-                cumulativeTransactionsByDate
+                transactionsByDateCumulative
               )}
               style={chartStyle}
             />
